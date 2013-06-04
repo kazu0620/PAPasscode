@@ -10,7 +10,9 @@
 #import "PAPasscodeViewController.h"
 
 #define NAVBAR_HEIGHT   44
-#define PROMPT_HEIGHT   74
+#define PROMPT_BG_HEIGHT    45
+#define PROMPT_LABEL_HEIGHT 20
+#define MARGIN_VIEW_TOP 20
 #define DIGIT_SPACING   10
 #define DIGIT_WIDTH     61
 #define DIGIT_HEIGHT    53
@@ -21,7 +23,7 @@
 #define MESSAGE_HEIGHT  74
 #define FAILED_LCAP     19
 #define FAILED_RCAP     19
-#define FAILED_HEIGHT   26
+#define FAILED_HEIGHT   45
 #define FAILED_MARGIN   10
 #define TEXTFIELD_MARGIN 8
 #define SLIDE_DURATION  0.3
@@ -63,20 +65,32 @@
         }
         self.modalPresentationStyle = UIModalPresentationFormSheet;
         _simple = YES;
+        _isDisplayNavigationBar = NO;
+        _isDisplayMessageAnimation = NO;
+        _isDisplayMessageText = YES;
     }
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardDidShow:) name:UIKeyboardDidShowNotification object:nil];
     return self;
 }
 
 - (void)loadView {
+    NSLog(@"lockview start");
     UIView *view = [[UIView alloc] initWithFrame:[UIScreen mainScreen].applicationFrame];
     view.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
-
-    UINavigationBar *navigationBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, 0, view.bounds.size.width, NAVBAR_HEIGHT)];
-    navigationBar.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-    navigationBar.items = @[self.navigationItem];
-    [view addSubview:navigationBar];
     
-    contentView = [[UIView alloc] initWithFrame:CGRectMake(0, NAVBAR_HEIGHT, view.bounds.size.width, view.bounds.size.height-NAVBAR_HEIGHT)];
+    NSInteger contentViewHeigt = view.bounds.size.height;
+    NSInteger contentViewY     = 0;
+    
+    if(_isDisplayNavigationBar){
+        UINavigationBar *navigationBar = [[UINavigationBar alloc] initWithFrame:CGRectMake(0, 0, view.bounds.size.width, NAVBAR_HEIGHT)];
+        navigationBar.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+        navigationBar.items = @[self.navigationItem];
+        [view addSubview:navigationBar];
+        contentViewHeigt = contentViewHeigt + NAVBAR_HEIGHT;
+        contentViewY = NAVBAR_HEIGHT;
+    }
+
+    contentView = [[UIView alloc] initWithFrame:CGRectMake(0, contentViewY, view.bounds.size.width, contentViewHeigt)];
     contentView.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
     if (_backgroundView) {
         [contentView addSubview:_backgroundView];
@@ -87,7 +101,7 @@
     CGFloat panelWidth = DIGIT_WIDTH*4+DIGIT_SPACING*3;
     if (_simple) {
         UIView *digitPanel = [[UIView alloc] initWithFrame:CGRectMake(0, 0, panelWidth, DIGIT_HEIGHT)];
-        digitPanel.frame = CGRectOffset(digitPanel.frame, (contentView.bounds.size.width-digitPanel.bounds.size.width)/2, PROMPT_HEIGHT);
+        digitPanel.frame = CGRectOffset(digitPanel.frame, (contentView.bounds.size.width-digitPanel.bounds.size.width)/2, MARGIN_VIEW_TOP + _lockedImageView.bounds.size.height + 20);
         digitPanel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleRightMargin;
         [contentView addSubview:digitPanel];
         
@@ -109,7 +123,7 @@
     } else {
         UIView *passcodePanel = [[UIView alloc] initWithFrame:CGRectMake(0, 0, panelWidth, DIGIT_HEIGHT)];
         passcodePanel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleRightMargin;
-        passcodePanel.frame = CGRectOffset(passcodePanel.frame, (contentView.bounds.size.width-passcodePanel.bounds.size.width)/2, PROMPT_HEIGHT);
+        passcodePanel.frame = CGRectOffset(passcodePanel.frame, (contentView.bounds.size.width-passcodePanel.bounds.size.width)/2, MARGIN_VIEW_TOP);
         passcodePanel.frame = CGRectInset(passcodePanel.frame, TEXTFIELD_MARGIN, TEXTFIELD_MARGIN);
         passcodePanel.layer.borderColor = [UIColor colorWithRed:0.65 green:0.67 blue:0.70 alpha:1.0].CGColor;
         passcodePanel.layer.borderWidth = 1.0;
@@ -122,49 +136,40 @@
         [contentView addSubview:passcodePanel];
         passcodeTextField = [[UITextField alloc] initWithFrame:CGRectInset(passcodePanel.frame, 6, 6)];
     }
+    
+    [self drawPromptMessage];
+    
     passcodeTextField.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleRightMargin;
     passcodeTextField.borderStyle = UITextBorderStyleNone;
     passcodeTextField.secureTextEntry = YES;
     passcodeTextField.textColor = [UIColor colorWithRed:0.23 green:0.33 blue:0.52 alpha:1.0];
     passcodeTextField.keyboardType = UIKeyboardTypeNumberPad;
+    passcodeTextField.keyboardAppearance = UIKeyboardAppearanceAlert;
     [passcodeTextField addTarget:self action:@selector(passcodeChanged:) forControlEvents:UIControlEventEditingChanged];
     [contentView addSubview:passcodeTextField];
 
-    promptLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, contentView.bounds.size.width, PROMPT_HEIGHT)];
-    promptLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-    promptLabel.backgroundColor = [UIColor clearColor];
-    promptLabel.textColor = [UIColor colorWithRed:0.30 green:0.34 blue:0.42 alpha:1.0];
-    promptLabel.font = [UIFont boldSystemFontOfSize:17];
-    promptLabel.shadowColor = [UIColor whiteColor];
-    promptLabel.shadowOffset = CGSizeMake(0, 1);
-#if __IPHONE_OS_VERSION_MIN_REQUIRED < 60000
-    promptLabel.textAlignment = UITextAlignmentCenter;
-#else
-    promptLabel.textAlignment = NSTextAlignmentCenter;
-#endif
-    promptLabel.numberOfLines = 0;
-    [contentView addSubview:promptLabel];
+    if(_lockedImageView){
+        _lockedImageView.frame = CGRectOffset(_lockedImageView.frame, (contentView.bounds.size.width - _lockedImageView.bounds.size.width) / 2, MARGIN_VIEW_TOP);
+        [contentView addSubview:_lockedImageView];
+    }
     
-    messageLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, PROMPT_HEIGHT+DIGIT_HEIGHT, contentView.bounds.size.width, MESSAGE_HEIGHT)];
+  
+    messageLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, MARGIN_VIEW_TOP + DIGIT_HEIGHT, contentView.bounds.size.width, MESSAGE_HEIGHT)];
     messageLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;
     messageLabel.backgroundColor = [UIColor clearColor];
     messageLabel.textColor = [UIColor colorWithRed:0.30 green:0.34 blue:0.42 alpha:1.0];
     messageLabel.font = [UIFont systemFontOfSize:14];
     messageLabel.shadowColor = [UIColor whiteColor];
     messageLabel.shadowOffset = CGSizeMake(0, 1);
-#if __IPHONE_OS_VERSION_MIN_REQUIRED < 60000
-    messageLabel.textAlignment = UITextAlignmentCenter;
-#else
     messageLabel.textAlignment = NSTextAlignmentCenter;
-#endif
     messageLabel.numberOfLines = 0;
 	messageLabel.text = _message;
     [contentView addSubview:messageLabel];
-        
-    UIImage *failedBg = [[UIImage imageNamed:@"papasscode_failed_bg"] resizableImageWithCapInsets:UIEdgeInsetsMake(0, FAILED_LCAP, 0, FAILED_RCAP)];
-    failedImageView = [[UIImageView alloc] initWithImage:failedBg];
-    failedImageView.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin|UIViewAutoresizingFlexibleRightMargin;
+    
+    failedImageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 320, FAILED_HEIGHT)];
+    failedImageView.backgroundColor = [UIColor redColor];
     failedImageView.hidden = YES;
+    failedImageView.alpha = 0.5f;
     [contentView addSubview:failedImageView];
     
     failedAttemptsLabel = [[UILabel alloc] initWithFrame:CGRectZero];
@@ -174,11 +179,8 @@
     failedAttemptsLabel.font = [UIFont boldSystemFontOfSize:15];
     failedAttemptsLabel.shadowColor = [UIColor blackColor];
     failedAttemptsLabel.shadowOffset = CGSizeMake(0, -1);
-#if __IPHONE_OS_VERSION_MIN_REQUIRED < 60000
-    failedAttemptsLabel.textAlignment = UITextAlignmentCenter;
-#else
     failedAttemptsLabel.textAlignment = NSTextAlignmentCenter;
-#endif
+    
     failedAttemptsLabel.hidden = YES;
     [contentView addSubview:failedAttemptsLabel];
     
@@ -308,10 +310,12 @@
         failedAttemptsLabel.text = [NSString stringWithFormat:NSLocalizedString(@"%d Failed Passcode Attempts", nil), _failedAttempts];
     }
     [failedAttemptsLabel sizeToFit];
-    CGFloat bgWidth = failedAttemptsLabel.bounds.size.width + FAILED_MARGIN*2;
+    
+    CGRect screenBounds = [[UIScreen mainScreen] bounds];
+    CGFloat bgWidth = screenBounds.size.width;
+    
     CGFloat x = floor((contentView.bounds.size.width-bgWidth)/2);
-    CGFloat y = PROMPT_HEIGHT+DIGIT_HEIGHT+floor((MESSAGE_HEIGHT-FAILED_HEIGHT)/2);
-    failedImageView.frame = CGRectMake(x, y, bgWidth, FAILED_HEIGHT);
+    CGFloat y = 0;
     x = failedImageView.frame.origin.x+FAILED_MARGIN;
     y = failedImageView.frame.origin.y+floor((failedImageView.bounds.size.height-failedAttemptsLabel.frame.size.height)/2);
     failedAttemptsLabel.frame = CGRectMake(x, y, failedAttemptsLabel.bounds.size.width, failedAttemptsLabel.bounds.size.height);
@@ -395,5 +399,62 @@
         }];
     }
 }
+
+- (void) keyboardDidShow:(NSNotification *)nsNotification {
+    NSDictionary *userInfo = [nsNotification userInfo];
+    CGSize kbSize = [[userInfo objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
+    keyboadHeight = kbSize.height;
+    [self adjustPromptMessagePosition];
+}
+
+-(void)adjustPromptMessagePosition{
+    CGFloat promptBgImageY = contentView.bounds.size.height - keyboadHeight - PROMPT_BG_HEIGHT;
+    CGFloat promptLabelY   = promptBgImageY + floor((promptBgImageView.bounds.size.height - promptLabel.bounds.size.height) / 2);
+    CGRect screenBounds = [[UIScreen mainScreen] bounds];
+    
+    if(!_isDisplayMessageAnimation){
+        promptBgImageView.frame = CGRectMake(0, promptBgImageY, screenBounds.size.width, PROMPT_BG_HEIGHT);
+        promptLabel.frame = CGRectMake(0, promptLabelY, contentView.bounds.size.width, PROMPT_LABEL_HEIGHT);
+        return;
+    }
+    
+    promptBgImageView.frame = CGRectMake(0, contentView.bounds.size.height - keyboadHeight, screenBounds.size.width, 0);
+    promptLabel.frame = CGRectMake(0, contentView.bounds.size.height - keyboadHeight, contentView.bounds.size.width, 0);
+    [UIView animateWithDuration:0.9f
+        animations:^{
+            promptBgImageView.frame = CGRectMake(0, promptBgImageY, screenBounds.size.width, PROMPT_BG_HEIGHT);
+            promptLabel.frame = CGRectMake(0, promptLabelY, contentView.bounds.size.width, PROMPT_LABEL_HEIGHT);
+        }
+        completion:nil
+    ];
+    
+}
+
+- (void) drawPromptMessage{
+    if(!_isDisplayMessageText){
+        return;
+    }
+    
+    if(promptLabel){
+        return;
+    }
+    
+    promptBgImageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 0, PROMPT_BG_HEIGHT)];
+    promptBgImageView.backgroundColor = [UIColor blueColor];
+    promptBgImageView.alpha = 0.5f;
+    [contentView addSubview:promptBgImageView];
+       
+    promptLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 0, PROMPT_LABEL_HEIGHT)];
+    promptLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    promptLabel.backgroundColor = [UIColor clearColor];
+    promptLabel.textColor = [UIColor whiteColor];
+    promptLabel.font = [UIFont boldSystemFontOfSize:15];
+    promptLabel.shadowColor = [UIColor blackColor];
+    promptLabel.textAlignment = NSTextAlignmentCenter;
+    [contentView addSubview:promptLabel];
+    
+    return;
+}
+
 
 @end

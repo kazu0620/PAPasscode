@@ -32,7 +32,9 @@ typedef enum {
 @interface PAPasscodeViewController : UIViewController {
     UIView *contentView;
     NSInteger phase;
+    NSInteger keyboadHeight;
     UILabel *promptLabel;
+    UIImageView *promptBgImageView;
     UILabel *messageLabel;
     UIImageView *failedImageView;
     UILabel *failedAttemptsLabel;
@@ -42,11 +44,15 @@ typedef enum {
 }
 
 @property (strong) UIView *backgroundView;
+@property (strong) UIImageView *lockedImageView;
 @property (readonly) PasscodeAction action;
 @property (weak) id<PAPasscodeViewControllerDelegate> delegate;
 @property (strong) NSString *alternativePasscode;
 @property (strong) NSString *passcode;
 @property (assign) BOOL simple;
+@property (assign) BOOL isDisplayNavigationBar;
+@property (assign) BOOL isDisplayMessageText;
+@property (assign) BOOL isDisplayMessageAnimation;
 @property (assign) NSInteger failedAttempts;
 @property (strong) NSString *enterPrompt;
 @property (strong) NSString *confirmPrompt;
