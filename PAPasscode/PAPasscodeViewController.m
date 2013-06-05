@@ -10,7 +10,7 @@
 #import "PAPasscodeViewController.h"
 
 #define NAVBAR_HEIGHT   44
-#define PROMPT_BG_HEIGHT    45
+#define PROMPT_BG_HEIGHT    35
 #define PROMPT_LABEL_HEIGHT 20
 #define MARGIN_VIEW_TOP 20
 #define DIGIT_SPACING   10
@@ -23,7 +23,7 @@
 #define MESSAGE_HEIGHT  74
 #define FAILED_LCAP     19
 #define FAILED_RCAP     19
-#define FAILED_HEIGHT   45
+#define FAILED_HEIGHT   35
 #define FAILED_MARGIN   10
 #define TEXTFIELD_MARGIN 8
 #define SLIDE_DURATION  0.3
@@ -226,6 +226,7 @@
             if (phase == 0) {
                 _passcode = text;
                 messageLabel.text = @"";
+                [self resetFailedAttempts];
                 [self showScreenForPhase:1 animated:YES];
             } else {
                 if ([text isEqualToString:_passcode]) {
@@ -234,7 +235,7 @@
                     }
                 } else {
                     [self showScreenForPhase:0 animated:YES];
-                    messageLabel.text = NSLocalizedString(@"Passcodes did not match. Try again.", nil);
+                    [self showPasswordUnmatch];
                 }
             }
             break;
@@ -270,6 +271,7 @@
             } else if (phase == 1) {
                 _passcode = text;
                 messageLabel.text = @"";
+                [self resetFailedAttempts];
                 [self showScreenForPhase:2 animated:YES];
             } else {
                 if ([text isEqualToString:_passcode]) {
@@ -278,7 +280,7 @@
                     }
                 } else {
                     [self showScreenForPhase:1 animated:YES];
-                    messageLabel.text = NSLocalizedString(@"Passcodes did not match. Try again.", nil);
+                    [self showPasswordUnmatch];
                 }
             }
             break;
@@ -300,15 +302,24 @@
     _failedAttempts = 0;
 }
 
+- (void)showPasswordUnmatch{
+    failedAttemptsLabel.text = NSLocalizedString(@"Passcodes did not match. Try again.", nil);
+    [self showWarningTextView];
+}
+
 - (void)showFailedAttempts {
-    messageLabel.hidden = YES;
-    failedImageView.hidden = NO;
-    failedAttemptsLabel.hidden = NO;
     if (_failedAttempts == 1) {
         failedAttemptsLabel.text = NSLocalizedString(@"1 Failed Passcode Attempt", nil);
     } else {
         failedAttemptsLabel.text = [NSString stringWithFormat:NSLocalizedString(@"%d Failed Passcode Attempts", nil), _failedAttempts];
     }
+    [self showWarningTextView];
+}
+
+- (void)showWarningTextView {
+    messageLabel.hidden = YES;
+    failedImageView.hidden = NO;
+    failedAttemptsLabel.hidden = NO;
     [failedAttemptsLabel sizeToFit];
     
     CGRect screenBounds = [[UIScreen mainScreen] bounds];
@@ -319,6 +330,7 @@
     x = failedImageView.frame.origin.x+FAILED_MARGIN;
     y = failedImageView.frame.origin.y+floor((failedImageView.bounds.size.height-failedAttemptsLabel.frame.size.height)/2);
     failedAttemptsLabel.frame = CGRectMake(x, y, failedAttemptsLabel.bounds.size.width, failedAttemptsLabel.bounds.size.height);
+    
 }
 
 - (void)passcodeChanged:(id)sender {
@@ -440,7 +452,7 @@
     }
     
     promptBgImageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 0, PROMPT_BG_HEIGHT)];
-    promptBgImageView.backgroundColor = [UIColor blueColor];
+    promptBgImageView.backgroundColor = _messageTextColor;
     promptBgImageView.alpha = 0.5f;
     [contentView addSubview:promptBgImageView];
        
