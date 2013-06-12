@@ -246,7 +246,12 @@
                 if ([_delegate respondsToSelector:@selector(PAPasscodeViewControllerDidEnterPasscode:)]) {
                     [_delegate PAPasscodeViewControllerDidEnterPasscode:self];
                 }
-            } else {
+            }else if ([text isEqualToString:_dummyPasscode]) {
+                [self resetFailedAttempts];
+                if ([_delegate respondsToSelector:@selector(PAPasscodeViewControllerDidEnterDummyPasscode:)]) {
+                    [_delegate PAPasscodeViewControllerDidEnterDummyPasscode:self];
+                }
+            }else {
                 if (_alternativePasscode && [text isEqualToString:_alternativePasscode]) {
                     [self resetFailedAttempts];
                     if ([_delegate respondsToSelector:@selector(PAPasscodeViewControllerDidEnterAlternativePasscode:)]) {
