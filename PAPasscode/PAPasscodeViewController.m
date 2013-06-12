@@ -190,10 +190,9 @@
     failedAttemptsLabel.hidden = YES;
     [contentView addSubview:failedAttemptsLabel];
     
-    if( _action == PasscodeActionSet
-       || _action == PasscodeActionSetDummyPassword
-       || _action ==  PasscodeActionChange
-       ){ [self _renderCloseButton]; }
+    if( _action == PasscodeActionSetDummyPassword || _action ==  PasscodeActionChange){
+        [self _renderCloseButton];
+    }
     
     self.view = view;
 }
