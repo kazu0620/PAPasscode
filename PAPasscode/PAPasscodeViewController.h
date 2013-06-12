@@ -44,9 +44,11 @@ typedef enum {
     UITextField *passcodeTextField;
     UIImageView *digitImageViews[4];
     UIImageView *snapshotImageView;
+    UIButton *closeButton;
 }
 
 @property (strong) UIView *backgroundView;
+@property (strong) UIButton *closeButton;
 @property (strong) UIImageView *lockedImageView;
 @property (strong) UIColor *messageTextColor;
 @property (readonly) PasscodeAction action;

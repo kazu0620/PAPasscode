@@ -81,7 +81,6 @@
 }
 
 - (void)loadView {
-    NSLog(@"lockview start");
     UIView *view = [[UIView alloc] initWithFrame:[UIScreen mainScreen].applicationFrame];
     view.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
     
@@ -190,6 +189,11 @@
     
     failedAttemptsLabel.hidden = YES;
     [contentView addSubview:failedAttemptsLabel];
+    
+    if( _action == PasscodeActionSet
+       || _action == PasscodeActionSetDummyPassword
+       || _action ==  PasscodeActionChange
+       ){ [self _renderCloseButton]; }
     
     self.view = view;
 }
@@ -504,6 +508,27 @@
     [contentView addSubview:promptLabel];
     
     return;
+}
+
+- (void) _renderCloseButton {
+
+    UIImage *closeImage = [UIImage imageNamed:@"passcode_closebutton"];
+    closeButton = [[UIButton alloc] initWithFrame:CGRectMake(
+        contentView.frame.size.width - closeImage.size.width -10,
+        10,
+        closeImage.size.width,
+        closeImage.size.height
+    )];
+    [closeButton setBackgroundImage: closeImage
+                   forState:UIControlStateNormal];
+    [closeButton addTarget:self
+            action:@selector(onClickCloseButton:) forControlEvents:UIControlEventTouchUpInside];
+    [contentView addSubview:closeButton];
+    
+}
+
+- (void)onClickCloseButton:(id)sender {
+    [self dismissViewControllerAnimated:YES completion:^{}];
 }
 
 
