@@ -51,6 +51,13 @@
                 _confirmPrompt = NSLocalizedString(@"Re-enter your passcode", nil);
                 break;
                 
+            case PasscodeActionSetDummyPassword:
+                self.title = NSLocalizedString(@"Set Dummy Passcode", nil);
+                _enterPrompt = NSLocalizedString(@"Enter a dummy passcode", nil);
+                _confirmPrompt = NSLocalizedString(@"Re-enter your dummy passcode", nil);
+                break;
+                
+                
             case PasscodeActionEnter:
                 self.title = NSLocalizedString(@"Enter Passcode", nil);
                 _enterPrompt = NSLocalizedString(@"Enter your passcode", nil);
@@ -240,6 +247,24 @@
             }
             break;
             
+        case PasscodeActionSetDummyPassword:
+            if (phase == 0) {
+                _dummyPasscode = text;
+                messageLabel.text = @"";
+                [self resetFailedAttempts];
+                [self showScreenForPhase:1 animated:YES];
+            } else {
+                if ([text isEqualToString:_dummyPasscode]) {
+                    if ([_delegate respondsToSelector:@selector(PAPasscodeViewControllerDidSetPasscode:)]) {
+                        [_delegate PAPasscodeViewControllerDidSetDummyPasscode:self];
+                    }
+                } else {
+                    [self showScreenForPhase:0 animated:YES];
+                    [self showPasswordUnmatch];
+                }
+            }
+            break;
+            
         case PasscodeActionEnter:
             if ([text isEqualToString:_passcode]) {
                 [self resetFailedAttempts];
@@ -370,6 +395,7 @@
     passcodeTextField.text = @"";
     if (!_simple) {
         BOOL finalScreen = _action == PasscodeActionSet && phase == 1;
+        finalScreen |= _action == PasscodeActionSetDummyPassword && phase == 1;
         finalScreen |= _action == PasscodeActionEnter && phase == 0;
         finalScreen |= _action == PasscodeActionChange && phase == 2;
         if (finalScreen) {
@@ -382,6 +408,13 @@
     
     switch (_action) {
         case PasscodeActionSet:
+            if (phase == 0) {
+                promptLabel.text = _enterPrompt;
+            } else {
+                promptLabel.text = _confirmPrompt;
+            }
+            break;
+        case PasscodeActionSetDummyPassword:
             if (phase == 0) {
                 promptLabel.text = _enterPrompt;
             } else {

@@ -10,6 +10,7 @@
 
 typedef enum {
     PasscodeActionSet,
+    PasscodeActionSetDummyPassword,
     PasscodeActionEnter,
     PasscodeActionChange
 } PasscodeAction;
@@ -26,6 +27,7 @@ typedef enum {
 - (void)PAPasscodeViewControllerDidEnterPasscode:(PAPasscodeViewController *)controller;
 - (void)PAPasscodeViewControllerDidEnterDummyPasscode:(PAPasscodeViewController *)controller;
 - (void)PAPasscodeViewControllerDidSetPasscode:(PAPasscodeViewController *)controller;
+- (void)PAPasscodeViewControllerDidSetDummyPasscode:(PAPasscodeViewController *)controller;
 - (void)PAPasscodeViewController:(PAPasscodeViewController *)controller didFailToEnterPasscode:(NSInteger)attempts;
 
 @end
